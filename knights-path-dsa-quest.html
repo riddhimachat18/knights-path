@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Knight's Path — 75-Day DSA Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F3EA;
+    --bg-soft:#EFEADC;
+    --surface:#FFFFFF;
+    --surface-2:#FBF9F3;
+    --border:#E3DCC8;
+    --ink:#26302A;
+    --ink-soft:#5B6259;
+    --muted:#8A8A7C;
+    --emerald:#1F4D3D;
+    --emerald-light:#2E7057;
+    --emerald-pale:#E6EFE9;
+    --gold:#B4872B;
+    --gold-pale:#F6ECD3;
+    --rust:#AD5A36;
+    --rust-pale:#F5E4DA;
+    --shadow: 0 1px 2px rgba(38,48,42,0.04), 0 8px 24px rgba(38,48,42,0.06);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Manrope', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Cinzel', serif;
+    letter-spacing:0.01em;
+  }
+  .mono{font-family:'JetBrains Mono', monospace;}
+  a{color:inherit;}
+  img,svg{display:block;}
+
+  /* ---------- Background texture ---------- */
+  .board-tex{
+    position:fixed; inset:0; z-index:-1; opacity:0.5;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(180,135,43,0.06), transparent 40%),
+      radial-gradient(circle at 85% 10%, rgba(31,77,61,0.06), transparent 40%),
+      radial-gradient(circle at 60% 80%, rgba(180,135,43,0.05), transparent 45%);
+  }
+
+  /* ---------- Top progress bar ---------- */
+  .top-progress{
+    position:sticky; top:0; z-index:50;
+    background:rgba(246,243,234,0.9);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--border);
+  }
+  .top-progress-inner{
+    max-width:1180px; margin:0 auto; padding:10px 24px;
+    display:flex; align-items:center; gap:16px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px;
+    font-family:'Cinzel',serif; color:var(--emerald); white-space:nowrap;
+  }
+  .brand svg{width:20px;height:20px;}
+  .track{
+    flex:1; height:8px; border-radius:99px; background:var(--bg-soft);
+    overflow:hidden; position:relative; border:1px solid var(--border);
+  }
+  .track-fill{
+    height:100%; border-radius:99px;
+    background:linear-gradient(90deg, var(--emerald-light), var(--gold));
+    width:0%; transition:width .5s ease;
+  }
+  .track-label{
+    font-size:12.5px; color:var(--ink-soft); white-space:nowrap; font-weight:600;
+  }
+  .nav-links{display:flex; gap:6px;}
+  .nav-links a{
+    font-size:12.5px; padding:6px 10px; border-radius:8px; color:var(--ink-soft);
+    text-decoration:none; font-weight:600;
+  }
+  .nav-links a:hover{background:var(--bg-soft); color:var(--ink);}
+
+  /* ---------- Progress toolbar (new) ---------- */
+  .progress-toolbar{
+    display:flex; align-items:center; gap:6px; flex-shrink:0;
+  }
+  .btn-tool{
+    display:inline-flex; align-items:center; gap:5px;
+    padding:6px 11px; border-radius:8px; font-weight:700; font-size:12px;
+    border:1px solid var(--border); background:var(--surface);
+    color:var(--ink-soft); cursor:pointer; white-space:nowrap;
+    transition:border-color .15s ease, color .15s ease, background .15s ease;
+    font-family:'Manrope', sans-serif;
+  }
+  .btn-tool:hover{border-color:var(--gold); color:var(--gold); background:var(--gold-pale);}
+  .btn-tool.danger:hover{border-color:var(--rust); color:var(--rust); background:var(--rust-pale);}
+  .btn-tool svg{flex-shrink:0;}
+  /* hide label text on small screens, keep icons */
+  @media (max-width:760px){
+    .btn-tool .btn-tool-label{display:none;}
+  }
+
+  @media (max-width:900px){ .nav-links{display:none;} }
+
+  /* ---------- Landing / hero ---------- */
+  .hero{
+    max-width:1180px; margin:0 auto; padding:96px 24px 64px;
+    display:grid; grid-template-columns:1.1fr 0.9fr; gap:56px; align-items:center;
+  }
+  @media (max-width:900px){ .hero{grid-template-columns:1fr; padding:56px 20px 40px;} }
+
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'JetBrains Mono', monospace; font-size:12px; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--emerald); background:var(--emerald-pale);
+    border:1px solid #cfe3d8; padding:6px 12px; border-radius:99px; margin-bottom:22px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--emerald-light);}
+
+  .hero h1{
+    font-size:clamp(34px, 4.6vw, 58px); line-height:1.08; margin:0 0 20px; color:var(--ink);
+  }
+  .hero h1 em{
+    font-style:normal; color:var(--emerald);
+    background:linear-gradient(180deg, transparent 62%, var(--gold-pale) 62%);
+  }
+  .hero p.lede{
+    font-size:17px; line-height:1.65; color:var(--ink-soft); max-width:520px; margin:0 0 32px;
+  }
+  .hero-ctas{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:36px;}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:13px 22px; border-radius:10px; font-weight:700; font-size:14.5px;
+    text-decoration:none; border:1px solid transparent; cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{
+    background:var(--emerald); color:#fff; box-shadow:0 8px 20px rgba(31,77,61,0.25);
+  }
+  .btn-primary:hover{background:var(--emerald-light); box-shadow:0 10px 24px rgba(31,77,61,0.3);}
+  .btn-ghost{
+    background:var(--surface); color:var(--ink); border:1px solid var(--border);
+  }
+  .btn-ghost:hover{border-color:var(--gold); color:var(--gold);}
+
+  .hero-stats{display:flex; gap:28px; flex-wrap:wrap;}
+  .hero-stat b{display:block; font-family:'Cinzel',serif; font-size:26px; color:var(--emerald);}
+  .hero-stat span{font-size:12.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;}
+
+  /* Knight rank ladder — signature element */
+  .rank-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:28px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+  }
+  .rank-card::before{
+    content:""; position:absolute; top:-40px; right:-40px; width:160px; height:160px;
+    background:radial-gradient(circle, var(--gold-pale), transparent 70%);
+  }
+  .rank-card h3{margin:0 0 4px; font-size:16px; color:var(--ink);}
+  .rank-card .sub{font-size:12.5px; color:var(--muted); margin-bottom:22px;}
+  .rank-path{display:flex; flex-direction:column; gap:0; position:relative;}
+  .rank-row{
+    display:flex; align-items:center; gap:14px; padding:10px 0; position:relative;
+  }
+  .rank-row:not(:last-child)::after{
+    content:""; position:absolute; left:17px; top:38px; width:2px; height:26px;
+    background:var(--border);
+  }
+  .rank-node{
+    width:36px;height:36px;border-radius:10px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg-soft); border:1px solid var(--border); font-size:16px;
+  }
+  .rank-row.target .rank-node{
+    background:var(--gold); border-color:var(--gold); box-shadow:0 0 0 4px var(--gold-pale);
+  }
+  .rank-row.done .rank-node{background:var(--emerald); border-color:var(--emerald);}
+  .rank-name{font-weight:700; font-size:14.5px;}
+  .rank-row.target .rank-name{color:var(--gold);}
+  .rank-desc{font-size:12px; color:var(--muted); margin-top:1px;}
+  .rank-goal-tag{
+    margin-top:20px; padding:10px 14px; border-radius:10px; background:var(--gold-pale);
+    border:1px solid #ecd9a4; font-size:12.5px; color:#7a5a17; display:flex; gap:8px; align-items:flex-start;
+    line-height:1.5;
+  }
+
+  /* ---------- Section: why / how ---------- */
+  .section{max-width:1180px; margin:0 auto; padding:56px 24px;}
+  .section-head{max-width:640px; margin-bottom:36px;}
+  .section-head .eyebrow{margin-bottom:14px;}
+  .section-head h2{font-size:clamp(24px,3vw,34px); margin:0 0 12px;}
+  .section-head p{color:var(--ink-soft); font-size:15.5px; line-height:1.6; margin:0;}
+
+  .loop-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+  @media (max-width:900px){ .loop-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:560px){ .loop-grid{grid-template-columns:1fr;} }
+  .loop-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px;
+    position:relative;
+  }
+  .loop-num{
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); margin-bottom:14px;
+  }
+  .loop-card h4{margin:0 0 8px; font-size:15.5px;}
+  .loop-card p{margin:0; font-size:13px; color:var(--ink-soft); line-height:1.55;}
+  .loop-time{
+    display:inline-block; margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:11.5px;
+    background:var(--emerald-pale); color:var(--emerald); padding:3px 9px; border-radius:99px;
+  }
+
+  .rule-strip{
+    display:flex; gap:20px; flex-wrap:wrap; background:var(--surface-2); border:1px solid var(--border);
+    border-radius:16px; padding:20px 22px; margin-top:20px;
+  }
+  .rule-strip .item{display:flex; gap:10px; align-items:flex-start; flex:1; min-width:220px;}
+  .rule-strip .pip{
+    width:26px;height:26px;border-radius:50%; background:var(--gold); color:#fff; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;
+    font-family:'JetBrains Mono',monospace; margin-top:1px;
+  }
+  .rule-strip strong{display:block; font-size:13.5px; margin-bottom:2px;}
+  .rule-strip span{font-size:12.5px; color:var(--ink-soft); line-height:1.5;}
+
+  /* ---------- Sheet layout ---------- */
+  .sheet-wrap{max-width:1180px; margin:0 auto; padding:0 24px 100px; display:grid; grid-template-columns:240px 1fr; gap:32px;}
+  @media (max-width:960px){ .sheet-wrap{grid-template-columns:1fr;} }
+
+  .side-nav{position:sticky; top:70px; align-self:start; max-height:calc(100vh - 90px); overflow:auto;}
+  @media (max-width:960px){ .side-nav{position:static; max-height:none; margin-bottom:8px;} }
+  .side-nav h5{
+    font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--muted); margin:0 0 12px;
+  }
+  .side-item{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:9px 10px; border-radius:8px; font-size:13px; font-weight:600; color:var(--ink-soft);
+    text-decoration:none; cursor:pointer; margin-bottom:2px;
+  }
+  .side-item:hover{background:var(--bg-soft); color:var(--ink);}
+  .side-item.active{background:var(--emerald-pale); color:var(--emerald);}
+  .side-pct{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);}
+
+  .topic-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:18px;
+    margin-bottom:22px; overflow:hidden; box-shadow:var(--shadow); scroll-margin-top:80px;
+  }
+  .topic-head{
+    display:flex; justify-content:space-between; align-items:center; gap:16px;
+    padding:22px 24px; cursor:pointer; user-select:none;
+  }
+  .topic-head-left{display:flex; align-items:center; gap:14px;}
+  .topic-range{
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#fff; background:var(--emerald);
+    padding:5px 10px; border-radius:8px; white-space:nowrap;
+  }
+  .topic-head h3{margin:0; font-size:19px;}
+  .topic-tagline{font-size:12.5px; color:var(--muted); margin-top:3px;}
+  .topic-progress-mini{display:flex; align-items:center; gap:10px;}
+  .mini-track{width:90px; height:6px; border-radius:99px; background:var(--bg-soft); overflow:hidden; border:1px solid var(--border);}
+  .mini-fill{height:100%; background:var(--gold); width:0%;}
+  .chev{transition:transform .2s ease; color:var(--muted);}
+  .topic-card.open .chev{transform:rotate(180deg);}
+  .topic-body{
+    max-height:0; overflow:hidden; transition:max-height .35s ease;
+    border-top:1px solid var(--border);
+  }
+  .topic-card.open .topic-body{max-height:4000px;}
+  .topic-body-inner{padding:22px 24px 26px;}
+
+  .day-row{
+    display:grid; grid-template-columns:56px 1fr 120px; gap:14px; align-items:center;
+    padding:11px 12px; border-radius:10px;
+  }
+  .day-row:nth-child(odd){background:var(--surface-2);}
+  .day-num{
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--emerald); font-weight:700;
+    background:var(--emerald-pale); text-align:center; padding:6px 0; border-radius:8px;
+  }
+  .day-topic{font-size:13.5px; font-weight:600; color:var(--ink);}
+  .day-video{
+    justify-self:end; font-size:12px; font-weight:700; color:var(--emerald); text-decoration:none;
+    display:flex; align-items:center; gap:5px; padding:6px 10px; border:1px solid var(--border); border-radius:8px;
+    white-space:nowrap;
+  }
+  .day-video:hover{border-color:var(--emerald); background:var(--emerald-pale);}
+
+  .subhead{
+    font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.07em;
+    color:var(--muted); margin:22px 0 10px;
+  }
+  .tag-row{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:6px;}
+  .tag{
+    font-size:12px; padding:5px 11px; border-radius:99px; background:var(--bg-soft); color:var(--ink-soft);
+    border:1px solid var(--border);
+  }
+
+  .prob-list{display:flex; flex-direction:column; gap:6px;}
+  .prob-row{
+    display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px;
+    border:1px solid var(--border); background:var(--surface-2);
+  }
+  .prob-check{
+    width:20px;height:20px; border-radius:6px; border:2px solid var(--border); flex-shrink:0; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; background:#fff; transition:.15s ease;
+  }
+  .prob-check.checked{background:var(--emerald); border-color:var(--emerald);}
+  .prob-check svg{width:12px;height:12px; opacity:0; transition:.15s ease;}
+  .prob-check.checked svg{opacity:1;}
+  .prob-name{flex:1; font-size:13.5px; font-weight:600;}
+  .prob-row.done .prob-name{color:var(--muted); text-decoration:line-through;}
+  .diff{font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:99px; text-transform:uppercase; letter-spacing:0.03em;}
+  .diff.easy{background:var(--emerald-pale); color:var(--emerald);}
+  .diff.medium{background:var(--gold-pale); color:#8a6816;}
+  .diff.hard{background:var(--rust-pale); color:var(--rust);}
+  .prob-link{
+    font-size:12px; font-weight:700; color:var(--emerald); text-decoration:none; display:flex; align-items:center; gap:4px;
+    padding:5px 9px; border-radius:7px; white-space:nowrap;
+  }
+  .prob-link:hover{background:var(--emerald-pale);}
+
+  .checklist-note{font-size:12px; color:var(--rust); font-weight:600; margin-top:2px;}
+
+  /* Footer */
+  footer{
+    border-top:1px solid var(--border); padding:44px 24px; text-align:center; color:var(--muted); font-size:13px;
+  }
+  footer .quote{font-family:'Cinzel',serif; color:var(--ink); font-size:16px; margin-bottom:8px;}
+
+  /* reveal animation */
+  .reveal{opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s ease;}
+  .reveal.in{opacity:1; transform:translateY(0);}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+
+  ::selection{background:var(--gold-pale); color:var(--ink);}
+
+  /* ---------- Auth modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0; z-index:200;
+    background:rgba(38,48,42,0.45); backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .modal-backdrop.open{opacity:1; pointer-events:all;}
+  .modal{
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:32px 28px; width:100%; max-width:380px; box-shadow:0 24px 64px rgba(38,48,42,0.18);
+    transform:translateY(10px); transition:transform .2s ease;
+  }
+  .modal-backdrop.open .modal{transform:translateY(0);}
+  .modal h3{margin:0 0 4px; font-size:18px;}
+  .modal .modal-sub{font-size:13px; color:var(--muted); margin-bottom:24px; line-height:1.5;}
+  .modal label{display:block; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:6px;}
+  .modal input{
+    width:100%; padding:10px 13px; border-radius:9px; border:1px solid var(--border);
+    background:var(--bg-soft); font-family:'Manrope',sans-serif; font-size:14px; color:var(--ink);
+    outline:none; transition:border-color .15s ease; box-sizing:border-box;
+  }
+  .modal input:focus{border-color:var(--emerald);}
+  .modal .field{margin-bottom:16px;}
+  .modal .modal-actions{display:flex; gap:10px; margin-top:24px;}
+  .modal .modal-actions .btn{flex:1; justify-content:center;}
+  .modal-error{
+    font-size:12.5px; color:var(--rust); background:var(--rust-pale); border:1px solid #e8c4b4;
+    border-radius:8px; padding:9px 12px; margin-top:14px; display:none;
+  }
+  .modal-error.visible{display:block;}
+  .modal-spinner{
+    display:none; width:14px; height:14px; border:2px solid rgba(255,255,255,0.4);
+    border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* signed-in badge */
+  .auth-badge{
+    display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700;
+    color:var(--emerald); background:var(--emerald-pale); border:1px solid #cfe3d8;
+    padding:5px 10px; border-radius:8px; cursor:pointer; white-space:nowrap;
+    transition:background .15s ease;
+  }
+  .auth-badge:hover{background:#d8eee1;}
+  .auth-badge svg{flex-shrink:0;}
+  .auth-badge .badge-name{max-width:90px; overflow:hidden; text-overflow:ellipsis;}
+  /* sync pulse indicator */
+  .sync-dot{
+    width:7px; height:7px; border-radius:50%; background:var(--emerald); flex-shrink:0;
+    transition:background .3s ease;
+  }
+  .sync-dot.syncing{background:var(--gold); animation:pulse 1s ease infinite;}
+  .sync-dot.error{background:var(--rust); animation:none;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+</style>
+</head>
+<body>
+
+<div class="board-tex"></div>
+
+<!-- hidden file input for import -->
+<input type="file" id="importFileInput" accept=".json" style="display:none">
+
+<!-- ============ AUTH MODAL ============ -->
+<div class="modal-backdrop" id="authModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <h3 id="modalTitle">Sync across devices</h3>
+    <p class="modal-sub">Enter a name and passcode. First time here? Your account is created automatically. No email needed.</p>
+    <div class="field">
+      <label for="authName">Name</label>
+      <input id="authName" type="text" placeholder="e.g. Riddhi" autocomplete="username" maxlength="40" />
+    </div>
+    <div class="field">
+      <label for="authPasscode">Passcode <span style="font-weight:400;color:var(--muted)">(min 4 chars)</span></label>
+      <input id="authPasscode" type="password" placeholder="••••••" autocomplete="current-password" maxlength="64" />
+    </div>
+    <div class="modal-error" id="authError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="authCancel">Cancel</button>
+      <button class="btn btn-primary" id="authSubmit">
+        <span class="modal-spinner" id="authSpinner"></span>
+        <span id="authSubmitLabel">Sign in / Register</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TOP PROGRESS BAR ============ -->
+<div class="top-progress">
+  <div class="top-progress-inner">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6 21h12M8 21c-.5-3 .5-5 1-6.5.6-1.8-.3-2.8-1-3.8C6.9 8.7 7 6 9.5 4.3 11 3.3 12.8 3 14 4c1 .8.7 2-.2 2.6-1.3.9-2.3 1-2.3 2.4 0 1.2 1.3 1.7 2.5 2.8 1.4 1.3 2 3 1.5 5.1-.3 1.3-.5 2.8-1 4.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Knight's Path
+    </div>
+    <div class="track"><div class="track-fill" id="globalTrackFill"></div></div>
+    <div class="track-label" id="globalTrackLabel">0 / 0 solved</div>
+    <div class="nav-links">
+      <a href="#quest">The Quest</a>
+      <a href="#loop">Daily Loop</a>
+      <a href="#sheet">Roadmap</a>
+    </div>
+    <!-- ── progress toolbar ── -->
+    <div class="progress-toolbar">
+      <button class="btn-tool" id="btnExport" title="Export progress as JSON">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 3v13M7 11l5 5 5-5M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="btn-tool-label">Export</span>
+      </button>
+      <button class="btn-tool" id="btnImport" title="Import progress from JSON">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 21V8M7 13l5-5 5 5M5 3h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="btn-tool-label">Import</span>
+      </button>
+      <button class="btn-tool danger" id="btnReset" title="Reset all progress">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 3v5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="btn-tool-label">Reset</span>
+      </button>
+      <!-- Auth: "Sign in" when logged out, badge when logged in -->
+      <button class="btn-tool" id="btnSignIn" title="Sign in to sync across devices" style="border-color:var(--emerald);color:var(--emerald);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="btn-tool-label" id="btnSignInLabel">Sign in</span>
+      </button>
+      <div class="auth-badge" id="authBadge" style="display:none;" title="Signed in — click to sign out">
+        <span class="sync-dot" id="syncDot"></span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.58-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="badge-name" id="badgeName"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HERO / LANDING ============ -->
+<section class="hero" id="quest">
+  <div class="reveal in">
+    <div class="eyebrow"><span class="dot"></span> 75-day interview preparation quest</div>
+    <h1>Every pawn can learn<br>to move like <em>a knight.</em></h1>
+    <p class="lede">A day-by-day path through arrays, graphs, trees and dynamic programming — structured like a campaign, not a checklist. Learn the pattern, fight the problems, log the lesson, and climb toward Knight rank.</p>
+    <div class="hero-ctas">
+      <a href="#sheet" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Begin at Day 1
+      </a>
+      <a href="#loop" class="btn btn-ghost">See the daily loop</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><b>75</b><span>Days</span></div>
+      <div class="hero-stat"><b>13</b><span>Topics</span></div>
+      <div class="hero-stat"><b>200+</b><span>Problems</span></div>
+      <div class="hero-stat"><b>3h</b><span>Per day</span></div>
+    </div>
+  </div>
+
+  <div class="rank-card reveal in">
+    <h3>Your rank ladder</h3>
+    <div class="sub">Modeled on LeetCode's contest rating tiers</div>
+    <div class="rank-path">
+      <div class="rank-row done">
+        <div class="rank-node">♙</div>
+        <div><div class="rank-name">Pawn</div><div class="rank-desc">You start here — every square is unfamiliar.</div></div>
+      </div>
+      <div class="rank-row target">
+        <div class="rank-node">♞</div>
+        <div><div class="rank-name">Knight</div><div class="rank-desc">Rating ~1600+. Patterns click before you finish reading.</div></div>
+      </div>
+      <div class="rank-row">
+        <div class="rank-node">♝</div>
+        <div><div class="rank-name">Bishop</div><div class="rank-desc">Consistent solver across every topic.</div></div>
+      </div>
+      <div class="rank-row">
+        <div class="rank-node">♜</div>
+        <div><div class="rank-name">Guardian</div><div class="rank-desc">Rating ~1900+. The long game, after Day 75.</div></div>
+      </div>
+    </div>
+    <div class="rank-goal-tag">🎯 <div><b>The goal of this quest:</b> finish all 75 days and 200+ problems with the discipline to reach <b>Knight</b> on LeetCode's rating — the milestone where pattern recognition stops feeling like memorization.</div></div>
+  </div>
+</section>
+
+<!-- ============ DAILY LOOP ============ -->
+<section class="section" id="loop">
+  <div class="section-head reveal">
+    <div class="eyebrow"><span class="dot"></span> The system</div>
+    <h2>One day, four moves</h2>
+    <p>~3 hours a day, broken into a loop that forces understanding before speed. Repeat it 75 times and the board looks different.</p>
+  </div>
+  <div class="loop-grid">
+    <div class="loop-card reveal"><div class="loop-num">01</div><h4>Learn</h4><p>Watch the day's theory video. Understand the pattern before touching code.</p><span class="loop-time">45 min</span></div>
+    <div class="loop-card reveal"><div class="loop-num">02</div><h4>Solve</h4><p>Attempt 2–3 problems cold. No solutions for at least 20–25 minutes each.</p><span class="loop-time">90 min</span></div>
+    <div class="loop-card reveal"><div class="loop-num">03</div><h4>Review</h4><p>Study mistakes, compare with the optimal approach, re-derive complexity.</p><span class="loop-time">30 min</span></div>
+    <div class="loop-card reveal"><div class="loop-num">04</div><h4>Log</h4><p>Record the pattern, the mistake, and one key insight in your tracker.</p><span class="loop-time">15 min</span></div>
+  </div>
+
+  <div class="rule-strip reveal">
+    <div class="item"><div class="pip">2</div><div><strong>Concept-heavy days</strong><span>2 problems — most time goes into understanding theory.</span></div></div>
+    <div class="item"><div class="pip">3</div><div><strong>Standard days</strong><span>3 problems — a warm-up plus two mediums, or two mediums and a hard.</span></div></div>
+    <div class="item"><div class="pip">5</div><div><strong>Revision days</strong><span>4–5 problems, timed at 25–30 min, mixing old and new patterns.</span></div></div>
+    <div class="item"><div class="pip">R</div><div><strong>The revision rule</strong><span>Re-attempt tough problems after 1, 3, 7, and 14 days.</span></div></div>
+  </div>
+</section>
+
+<!-- ============ ROADMAP / SHEET ============ -->
+<section class="section" id="sheet" style="padding-top:0;">
+  <div class="section-head reveal">
+    <div class="eyebrow"><span class="dot"></span> The roadmap</div>
+    <h2>75 days, 13 campaigns</h2>
+    <p>Click a campaign to expand it. Check off problems as you clear them — the bar at the top tracks your march toward Knight rank.</p>
+  </div>
+
+  <div class="sheet-wrap">
+    <nav class="side-nav">
+      <h5>Campaigns</h5>
+      <div id="sideNavList"></div>
+    </nav>
+    <div id="sheetList"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="quote">"A knight's move looks strange until you understand the board."</div>
+  <div>Built for the 75-Day DSA Quest · Progress is saved in your browser via localStorage.</div>
+</footer>
+
+<script>
+/* =========================================================
+   DATA
+   ========================================================= */
+const LC = (slug) => `https://leetcode.com/problems/${slug}/`;
+const YT = (q) => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+
+const sections = [
+  {
+    id:"foundations", range:"Days 1–6", title:"Build the Foundations",
+    tagline:"Do not begin advanced problems before understanding complexity and code execution.",
+    days:[
+      {d:1, t:"Time & space complexity", v:YT("big o notation neetcode")},
+      {d:2, t:"Big O, Omega & Theta notation", v:YT("big o omega theta explained")},
+      {d:3, t:"Arrays & memory representation", v:YT("arrays data structure explained")},
+      {d:4, t:"Strings & common operations", v:YT("string algorithms basics")},
+      {d:5, t:"Recursion fundamentals", v:YT("recursion explained neetcode")},
+      {d:6, t:"Mixed practice & revision", v:YT("dsa foundations revision")},
+    ],
+    patterns:["LIFO processing","Next greater element","Previous smaller element","Expression evaluation","Window maximum tracking"],
+    problems:[
+      {n:"Valid Parentheses", diff:"Easy", url:LC("valid-parentheses")},
+      {n:"Min Stack", diff:"Medium", url:LC("min-stack")},
+      {n:"Daily Temperatures", diff:"Medium", url:LC("daily-temperatures")},
+      {n:"Sliding Window Maximum", diff:"Hard", url:LC("sliding-window-maximum")},
+    ]
+  },
+  {
+    id:"arrays-hashing", range:"Days 7–12", title:"Arrays, Strings & Hashing",
+    tagline:"These patterns appear repeatedly across Meta, Microsoft, and Amazon interviews.",
+    days:[
+      {d:7, t:"Array traversal & manipulation", v:YT("neetcode arrays and hashing")},
+      {d:8, t:"Frequency counting with hash maps", v:YT("hash map frequency counting")},
+      {d:9, t:"Sets & duplicate detection", v:YT("sets duplicate detection algorithms")},
+      {d:10, t:"Prefix and suffix arrays", v:YT("prefix suffix array technique")},
+      {d:11, t:"Prefix sums & subarray problems", v:YT("prefix sum subarray neetcode")},
+      {d:12, t:"Mixed timed practice", v:YT("arrays hashing mock interview")},
+    ],
+    patterns:["Frequency maps","Running sums","In-place updates","Array transformation","Lookup optimization"],
+    problems:[
+      {n:"Two Sum", diff:"Easy", url:LC("two-sum")},
+      {n:"Group Anagrams", diff:"Medium", url:LC("group-anagrams")},
+      {n:"Product of Array Except Self", diff:"Medium", url:LC("product-of-array-except-self")},
+      {n:"Subarray Sum Equals K", diff:"Medium", url:LC("subarray-sum-equals-k")},
+    ]
+  },
+  {
+    id:"two-pointers", range:"Days 13–18", title:"Two Pointers & Sliding Window",
+    tagline:"Learn how to replace repeated work with controlled pointer movement.",
+    days:[
+      {d:13, t:"Opposite-direction pointers", v:YT("neetcode two pointers")},
+      {d:14, t:"Same-direction pointers", v:YT("same direction two pointer technique")},
+      {d:15, t:"Fixed-size sliding windows", v:YT("fixed size sliding window")},
+      {d:16, t:"Variable-size sliding windows", v:YT("neetcode sliding window")},
+      {d:17, t:"Substring & subarray patterns", v:YT("substring subarray sliding window")},
+      {d:18, t:"Revision & timed practice", v:YT("two pointers mock interview")},
+    ],
+    patterns:["Shrinking windows","Expanding windows","Sorted-array scanning","Duplicate removal","Running frequency tracking"],
+    problems:[
+      {n:"3Sum", diff:"Medium", url:LC("3sum")},
+      {n:"Container With Most Water", diff:"Medium", url:LC("container-with-most-water")},
+      {n:"Longest Substring Without Repeating Characters", diff:"Medium", url:LC("longest-substring-without-repeating-characters")},
+      {n:"Minimum Window Substring", diff:"Hard", url:LC("minimum-window-substring")},
+    ]
+  },
+  {
+    id:"linked-lists", range:"Days 19–24", title:"Linked Lists",
+    tagline:"Linked-list questions test pointer control more than memorization.",
+    days:[
+      {d:19, t:"Singly & doubly linked lists", v:YT("neetcode linked list")},
+      {d:20, t:"Reversing a linked list", v:YT("reverse linked list explained")},
+      {d:21, t:"Fast & slow pointers", v:YT("fast slow pointer linked list")},
+      {d:22, t:"Merging & sorting lists", v:YT("merge sort linked list")},
+      {d:23, t:"List intersection & cycle detection", v:YT("linked list cycle detection floyd")},
+      {d:24, t:"Mixed practice & revision", v:YT("linked list mock interview")},
+    ],
+    patterns:["Dummy nodes","Pointer rewiring","Cycle detection","Middle-node discovery","In-place reversal"],
+    problems:[
+      {n:"Reverse Linked List", diff:"Easy", url:LC("reverse-linked-list")},
+      {n:"Merge Two Sorted Lists", diff:"Easy", url:LC("merge-two-sorted-lists")},
+      {n:"Linked List Cycle", diff:"Easy", url:LC("linked-list-cycle")},
+      {n:"Reorder List", diff:"Medium", url:LC("reorder-list")},
+    ]
+  },
+  {
+    id:"stacks-queues", range:"Days 25–30", title:"Stacks, Queues & Monotonic Patterns",
+    tagline:"Use stacks and queues when order determines how data is processed.",
+    days:[
+      {d:25, t:"Stack & queue fundamentals", v:YT("neetcode stack monotonic")},
+      {d:26, t:"Expression & bracket problems", v:YT("expression evaluation stack")},
+      {d:27, t:"Monotonic increasing stacks", v:YT("monotonic stack explained")},
+      {d:28, t:"Monotonic decreasing stacks", v:YT("monotonic decreasing stack")},
+      {d:29, t:"Deques & window maximums", v:YT("deque sliding window maximum")},
+      {d:30, t:"Revision & timed practice", v:YT("stack queue mock interview")},
+    ],
+    patterns:["LIFO processing","Next greater element","Previous smaller element","Expression evaluation","Window maximum tracking"],
+    problems:[
+      {n:"Valid Parentheses", diff:"Easy", url:LC("valid-parentheses")},
+      {n:"Min Stack", diff:"Medium", url:LC("min-stack")},
+      {n:"Daily Temperatures", diff:"Medium", url:LC("daily-temperatures")},
+      {n:"Sliding Window Maximum", diff:"Hard", url:LC("sliding-window-maximum")},
+    ]
+  },
+  {
+    id:"binary-search", range:"Days 31–36", title:"Binary Search, Sorting & Intervals",
+    tagline:"Binary search is not limited to finding numbers inside sorted arrays.",
+    days:[
+      {d:31, t:"Standard binary search", v:YT("binary search algorithm explained")},
+      {d:32, t:"First and last occurrence", v:YT("binary search first last occurrence")},
+      {d:33, t:"Binary search on answers", v:YT("binary search on the answer technique")},
+      {d:34, t:"Sorting techniques & comparators", v:YT("sorting algorithms comparators")},
+      {d:35, t:"Intervals & overlapping ranges", v:YT("merge intervals explained")},
+      {d:36, t:"Mixed practice & revision", v:YT("binary search mock interview")},
+    ],
+    patterns:["Search-space reduction","Lower/upper bounds","Feasibility checking","Interval merging","Custom sorting"],
+    problems:[
+      {n:"Search in Rotated Sorted Array", diff:"Medium", url:LC("search-in-rotated-sorted-array")},
+      {n:"Koko Eating Bananas", diff:"Medium", url:LC("koko-eating-bananas")},
+      {n:"Merge Intervals", diff:"Medium", url:LC("merge-intervals")},
+      {n:"Meeting Rooms II", diff:"Medium", url:LC("meeting-rooms-ii")},
+    ]
+  },
+  {
+    id:"backtracking", range:"Days 37–42", title:"Recursion & Backtracking",
+    tagline:"Backtracking explores possibilities and reverses choices when paths fail.",
+    days:[
+      {d:37, t:"Recursion trees & base cases", v:YT("neetcode backtracking")},
+      {d:38, t:"Subsets & combinations", v:YT("subsets combinations backtracking")},
+      {d:39, t:"Permutations", v:YT("permutations backtracking explained")},
+      {d:40, t:"Grid-based backtracking", v:YT("word search backtracking grid")},
+      {d:41, t:"Constraint-based search", v:YT("n queens backtracking explained")},
+      {d:42, t:"Revision & timed practice", v:YT("backtracking mock interview")},
+    ],
+    patterns:["Choose–explore–unchoose","Decision trees","State restoration","Pruning invalid paths","Duplicate handling"],
+    problems:[
+      {n:"Subsets", diff:"Medium", url:LC("subsets")},
+      {n:"Permutations", diff:"Medium", url:LC("permutations")},
+      {n:"Combination Sum", diff:"Medium", url:LC("combination-sum")},
+      {n:"Word Search", diff:"Medium", url:LC("word-search")},
+      {n:"N-Queens", diff:"Hard", url:LC("n-queens")},
+    ]
+  },
+  {
+    id:"trees", range:"Days 43–48", title:"Trees & Binary Search Trees",
+    tagline:"Tree questions test recursion, traversal, and hierarchical problem-solving.",
+    days:[
+      {d:43, t:"Tree terminology & representation", v:YT("neetcode trees dfs bfs")},
+      {d:44, t:"DFS traversals", v:YT("tree dfs preorder inorder postorder")},
+      {d:45, t:"Breadth-first traversal", v:YT("tree level order traversal bfs")},
+      {d:46, t:"Tree depth & diameter", v:YT("diameter of binary tree explained")},
+      {d:47, t:"Binary search tree properties", v:YT("binary search tree validate explained")},
+      {d:48, t:"Lowest common ancestor & tree construction", v:YT("lowest common ancestor tree construction")},
+    ],
+    patterns:["Preorder/inorder/postorder","Level-order traversal","Recursive information passing","Lowest common ancestor","Tree construction"],
+    problems:[
+      {n:"Maximum Depth of Binary Tree", diff:"Easy", url:LC("maximum-depth-of-binary-tree")},
+      {n:"Diameter of Binary Tree", diff:"Easy", url:LC("diameter-of-binary-tree")},
+      {n:"Validate Binary Search Tree", diff:"Medium", url:LC("validate-binary-search-tree")},
+      {n:"Lowest Common Ancestor of a BST", diff:"Medium", url:LC("lowest-common-ancestor-of-a-binary-search-tree")},
+      {n:"Serialize and Deserialize Binary Tree", diff:"Hard", url:LC("serialize-and-deserialize-binary-tree")},
+    ]
+  },
+  {
+    id:"heaps-tries", range:"Days 49–54", title:"Heaps & Tries",
+    tagline:"These structures solve priority-based and prefix-based problems efficiently.",
+    days:[
+      {d:49, t:"Min-heaps and max-heaps", v:YT("neetcode heap trie")},
+      {d:50, t:"Top-K element patterns", v:YT("top k elements heap")},
+      {d:51, t:"Two-heap problems", v:YT("two heap median stream")},
+      {d:52, t:"K-way merging", v:YT("merge k sorted lists heap")},
+      {d:53, t:"Trie construction & search", v:YT("trie data structure explained")},
+      {d:54, t:"Revision & timed practice", v:YT("heap trie mock interview")},
+    ],
+    patterns:["Priority processing","Running median","Top-K selection","Prefix searching","Multi-list merging"],
+    problems:[
+      {n:"Kth Largest Element in an Array", diff:"Medium", url:LC("kth-largest-element-in-an-array")},
+      {n:"Top K Frequent Elements", diff:"Medium", url:LC("top-k-frequent-elements")},
+      {n:"Find Median from Data Stream", diff:"Hard", url:LC("find-median-from-data-stream")},
+      {n:"Merge k Sorted Lists", diff:"Hard", url:LC("merge-k-sorted-lists")},
+      {n:"Design Add and Search Words Data Structure", diff:"Medium", url:LC("design-add-and-search-words-data-structure")},
+    ]
+  },
+  {
+    id:"graphs", range:"Days 55–60", title:"Graphs",
+    tagline:"Graph problems become easier once you identify nodes, edges, and traversal state.",
+    days:[
+      {d:55, t:"Graph representation", v:YT("neetcode graphs")},
+      {d:56, t:"Breadth-first and depth-first search", v:YT("graph bfs dfs explained")},
+      {d:57, t:"Connected components", v:YT("connected components graph algorithm")},
+      {d:58, t:"Topological sorting", v:YT("topological sort explained")},
+      {d:59, t:"Shortest-path fundamentals", v:YT("dijkstra shortest path explained")},
+      {d:60, t:"Mixed practice & revision", v:YT("graphs mock interview")},
+    ],
+    patterns:["Visited sets","Cycle detection","Multi-source BFS","Dependency ordering","Grid-to-graph conversion"],
+    problems:[
+      {n:"Number of Islands", diff:"Medium", url:LC("number-of-islands")},
+      {n:"Clone Graph", diff:"Medium", url:LC("clone-graph")},
+      {n:"Course Schedule", diff:"Medium", url:LC("course-schedule")},
+      {n:"Rotting Oranges", diff:"Medium", url:LC("rotting-oranges")},
+      {n:"Network Delay Time", diff:"Medium", url:LC("network-delay-time")},
+    ]
+  },
+  {
+    id:"dp-greedy", range:"Days 61–66", title:"Dynamic Programming & Greedy",
+    tagline:"Stop memorizing DP solutions. Learn how repeated states are created.",
+    days:[
+      {d:61, t:"Memoization & tabulation", v:YT("neetcode dynamic programming")},
+      {d:62, t:"One-dimensional DP", v:YT("1d dynamic programming explained")},
+      {d:63, t:"Two-dimensional DP", v:YT("2d dynamic programming explained")},
+      {d:64, t:"Knapsack & subsequence patterns", v:YT("knapsack longest common subsequence dp")},
+      {d:65, t:"Greedy decision-making", v:YT("greedy algorithm explained")},
+      {d:66, t:"Revision & pattern comparison", v:YT("dynamic programming mock interview")},
+    ],
+    patterns:["What state changes?","What choices are available?","Which subproblems repeat?","What is the recurrence relation?","Can memory usage be reduced?"],
+    problems:[
+      {n:"House Robber", diff:"Medium", url:LC("house-robber")},
+      {n:"Coin Change", diff:"Medium", url:LC("coin-change")},
+      {n:"Longest Common Subsequence", diff:"Medium", url:LC("longest-common-subsequence")},
+      {n:"Jump Game", diff:"Medium", url:LC("jump-game")},
+    ]
+  },
+  {
+    id:"company-practice", range:"Days 67–71", title:"Company-Style Interview Practice",
+    tagline:"Knowing patterns is different from solving unfamiliar problems under pressure.",
+    days:[
+      {d:67, t:"Meta-style: arrays, graphs, communication", v:YT("meta interview questions leetcode")},
+      {d:68, t:"Microsoft-style: trees, recursion, edge cases", v:YT("microsoft interview questions leetcode")},
+      {d:69, t:"Amazon-style: hashing, heaps, practical scenarios", v:YT("amazon interview questions leetcode")},
+      {d:70, t:"Complete one full mock interview", v:"https://www.pramp.com"},
+      {d:71, t:"Analyze mistakes & repeat failed problems", v:YT("how to review leetcode mistakes")},
+    ],
+    patterns:["Clarify requirements","Discuss brute force","Identify the pattern","Explain the optimized approach","Write clean code","Test edge cases","State complexity"],
+    problems:[
+      {n:"Company-tagged problems (LeetCode)", diff:"Mixed", url:"https://leetcode.com/company/"},
+      {n:"Free mock interview practice — Pramp", diff:"Mixed", url:"https://www.pramp.com"},
+    ],
+    note:"Goal: complete 10 company-tagged problems + 1 realistic mock interview this block."
+  },
+  {
+    id:"final-sprint", range:"Days 72–75", title:"The Final Interview Sprint",
+    tagline:"Do not start new topics during the final four days.",
+    days:[
+      {d:72, t:"Revise arrays, strings, hashing, sliding windows", v:YT("dsa revision arrays strings hashing")},
+      {d:73, t:"Revise trees, graphs, heaps, binary search", v:YT("dsa revision trees graphs heaps")},
+      {d:74, t:"Two timed mock interviews with verbal explanations", v:"https://leetcode.com/interview/"},
+      {d:75, t:"Review mistakes, templates, complexities, recurring patterns", v:YT("final dsa interview review")},
+    ],
+    patterns:["Recognize common patterns quickly","Explain brute-force and optimized solutions","Write compilable code without external help","Test normal and edge cases","Calculate time and space complexity","Communicate clearly while coding","Recover calmly when your first approach fails"],
+    problems:[]
+  },
+];
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+const sheetList = document.getElementById('sheetList');
+const sideNavList = document.getElementById('sideNavList');
+
+function diffClass(d){
+  d = d.toLowerCase();
+  if(d==='easy') return 'easy';
+  if(d==='hard') return 'hard';
+  if(d==='medium') return 'medium';
+  return 'medium';
+}
+
+sections.forEach((sec, si) => {
+  // side nav
+  const navItem = document.createElement('div');
+  navItem.className = 'side-item';
+  navItem.dataset.target = sec.id;
+  navItem.innerHTML = `<span>${sec.title}</span><span class="side-pct mono" id="pct-${sec.id}">0%</span>`;
+  navItem.addEventListener('click', () => {
+    document.getElementById('card-'+sec.id).scrollIntoView({behavior:'smooth', block:'start'});
+  });
+  sideNavList.appendChild(navItem);
+
+  // card
+  const card = document.createElement('div');
+  card.className = 'topic-card';
+  card.id = 'card-'+sec.id;
+
+  const daysHtml = sec.days.map(day => `
+    <div class="day-row">
+      <div class="day-num">D${day.d}</div>
+      <div class="day-topic">${day.t}</div>
+      <a class="day-video" href="${day.v}" target="_blank" rel="noopener">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M8 5v14l11-7L8 5z" fill="currentColor"/></svg>
+        Watch
+      </a>
+    </div>
+  `).join('');
+
+  const patternsHtml = sec.patterns && sec.patterns.length ? `
+    <div class="subhead">Patterns to internalize</div>
+    <div class="tag-row">${sec.patterns.map(p=>`<span class="tag">${p}</span>`).join('')}</div>
+  ` : '';
+
+  const problemsHtml = sec.problems && sec.problems.length ? `
+    <div class="subhead">Problems to practise</div>
+    <div class="prob-list" id="probs-${sec.id}">
+      ${sec.problems.map((p,pi)=>`
+        <div class="prob-row" data-sec="${sec.id}" data-idx="${pi}">
+          <div class="prob-check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="prob-name">${p.n}</div>
+          <div class="diff ${diffClass(p.diff)}">${p.diff}</div>
+          <a class="prob-link" href="${p.url}" target="_blank" rel="noopener">LeetCode ↗</a>
+        </div>
+      `).join('')}
+    </div>
+    ${sec.note ? `<div class="checklist-note">★ ${sec.note}</div>` : ''}
+  ` : '';
+
+  card.innerHTML = `
+    <div class="topic-head" data-toggle="${sec.id}">
+      <div class="topic-head-left">
+        <div class="topic-range">${sec.range}</div>
+        <div>
+          <h3>${sec.title}</h3>
+          <div class="topic-tagline">${sec.tagline}</div>
+        </div>
+      </div>
+      <div class="topic-progress-mini">
+        <div class="mini-track"><div class="mini-fill" id="mini-${sec.id}"></div></div>
+        <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+    <div class="topic-body">
+      <div class="topic-body-inner">
+        <div class="subhead">Day-by-day</div>
+        ${daysHtml}
+        ${patternsHtml}
+        ${problemsHtml}
+      </div>
+    </div>
+  `;
+
+  sheetList.appendChild(card);
+
+  card.querySelector('.topic-head').addEventListener('click', () => {
+    card.classList.toggle('open');
+  });
+});
+
+// open first section by default
+document.getElementById('card-'+sections[0].id).classList.add('open');
+
+/* =========================================================
+   PERSISTENCE — localStorage
+   Key: "knights-path-progress"
+   Schema: { sectionId: [index, ...] }   (arrays, not Sets, for JSON compat)
+   ========================================================= */
+const STORAGE_KEY = 'knights-path-progress';
+
+/** Load saved progress from localStorage → return state object with Sets */
+function loadState() {
+  const saved = {};
+  sections.forEach(s => saved[s.id] = new Set());
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      sections.forEach(s => {
+        if (Array.isArray(parsed[s.id])) {
+          parsed[s.id].forEach(idx => saved[s.id].add(String(idx)));
+        }
+      });
+    }
+  } catch(e) {
+    console.warn('knights-path: could not load saved progress', e);
+  }
+  return saved;
+}
+
+/** Serialize state (Sets → arrays) and write to localStorage */
+function saveState() {
+  const plain = {};
+  sections.forEach(s => { plain[s.id] = [...state[s.id]]; });
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(plain));
+  } catch(e) {
+    console.warn('knights-path: could not save progress', e);
+  }
+}
+
+/** Apply state to DOM — sync every .prob-row checkbox and done class */
+function applyStateToDOM() {
+  document.querySelectorAll('.prob-row').forEach(row => {
+    const sec = row.dataset.sec, idx = String(row.dataset.idx);
+    const check = row.querySelector('.prob-check');
+    const checked = state[sec] && state[sec].has(idx);
+    check.classList.toggle('checked', checked);
+    row.classList.toggle('done', checked);
+  });
+}
+
+// ── initialise state from storage ──
+const state = loadState();
+applyStateToDOM();
+
+/* =========================================================
+   PROGRESS TRACKING
+   ========================================================= */
+function updateProgress(){
+  let totalProblems = 0, totalChecked = 0;
+  sections.forEach(sec => {
+    const total = sec.problems ? sec.problems.length : 0;
+    const checked = state[sec.id].size;
+    totalProblems += total;
+    totalChecked += checked;
+    const pct = total ? Math.round((checked/total)*100) : 0;
+    const pctEl = document.getElementById('pct-'+sec.id);
+    const miniEl = document.getElementById('mini-'+sec.id);
+    if(pctEl) pctEl.textContent = pct+'%';
+    if(miniEl) miniEl.style.width = pct+'%';
+  });
+  const globalPct = totalProblems ? Math.round((totalChecked/totalProblems)*100) : 0;
+  document.getElementById('globalTrackFill').style.width = globalPct+'%';
+  document.getElementById('globalTrackLabel').textContent = `${totalChecked} / ${totalProblems} solved`;
+}
+
+// run once on load to reflect restored state
+updateProgress();
+
+// checkbox toggle — save on every change
+document.addEventListener('click', (e) => {
+  const row = e.target.closest('.prob-row');
+  if(!row) return;
+  const sec = row.dataset.sec, idx = String(row.dataset.idx);
+  const check = row.querySelector('.prob-check');
+  if(state[sec].has(idx)){
+    state[sec].delete(idx);
+    check.classList.remove('checked');
+    row.classList.remove('done');
+  } else {
+    state[sec].add(idx);
+    check.classList.add('checked');
+    row.classList.add('done');
+  }
+  saveState();
+  syncToServer();
+  updateProgress();
+});
+
+/* =========================================================
+   RESET PROGRESS
+   ========================================================= */
+document.getElementById('btnReset').addEventListener('click', () => {
+  if (!confirm('Reset all progress? This cannot be undone.')) return;
+  sections.forEach(s => state[s.id].clear());
+  saveState();
+  applyStateToDOM();
+  updateProgress();
+});
+
+/* =========================================================
+   EXPORT PROGRESS
+   ========================================================= */
+document.getElementById('btnExport').addEventListener('click', () => {
+  const plain = {};
+  sections.forEach(s => { plain[s.id] = [...state[s.id]]; });
+  const blob = new Blob([JSON.stringify(plain, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'knights-path-progress.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+/* =========================================================
+   IMPORT PROGRESS
+   ========================================================= */
+document.getElementById('btnImport').addEventListener('click', () => {
+  document.getElementById('importFileInput').click();
+});
+
+document.getElementById('importFileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try {
+      const parsed = JSON.parse(evt.target.result);
+      // validate: must be a plain object
+      if (typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('invalid format');
+      sections.forEach(s => {
+        state[s.id].clear();
+        if (Array.isArray(parsed[s.id])) {
+          parsed[s.id].forEach(idx => state[s.id].add(String(idx)));
+        }
+      });
+      saveState();
+      syncToServer();
+      applyStateToDOM();
+      updateProgress();
+    } catch(err) {
+      alert('Could not import — make sure the file is a valid knights-path-progress.json.');
+    }
+  };
+  reader.readAsText(file);
+  // reset input so the same file can be re-imported if needed
+  e.target.value = '';
+});
+
+/* scroll reveal */
+const observer = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){ entry.target.classList.add('in'); }
+  });
+}, {threshold:0.12});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+/* active side-nav highlight on scroll */
+const cardEls = sections.map(s=>document.getElementById('card-'+s.id));
+window.addEventListener('scroll', () => {
+  let currentId = sections[0].id;
+  cardEls.forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if(rect.top <= 140) currentId = el.id.replace('card-','');
+  });
+  document.querySelectorAll('.side-item').forEach(item=>{
+    item.classList.toggle('active', item.dataset.target === currentId);
+  });
+}, {passive:true});
+
+/* =========================================================
+   BACKEND SYNC
+   API_BASE: when served from the same Express server this
+   resolves to the same origin. Override with a full URL if
+   you host the frontend separately (e.g. GitHub Pages).
+   ========================================================= */
+const API_BASE = window.KNIGHTS_API_BASE || '';
+
+let authToken = localStorage.getItem('knights-path-token') || null;
+let authName  = localStorage.getItem('knights-path-name')  || null;
+
+// ── DOM refs for auth UI ──
+const authModal   = document.getElementById('authModal');
+const authBadge   = document.getElementById('authBadge');
+const badgeName   = document.getElementById('badgeName');
+const btnSignIn   = document.getElementById('btnSignIn');
+const authCancel  = document.getElementById('authCancel');
+const authSubmit  = document.getElementById('authSubmit');
+const authError   = document.getElementById('authError');
+const authSpinner = document.getElementById('authSpinner');
+const authSubmitLabel = document.getElementById('authSubmitLabel');
+const syncDot     = document.getElementById('syncDot');
+
+function setSyncState(state) {
+  syncDot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
+}
+
+function updateAuthUI() {
+  if (authToken && authName) {
+    btnSignIn.style.display  = 'none';
+    authBadge.style.display  = 'inline-flex';
+    badgeName.textContent    = authName;
+  } else {
+    btnSignIn.style.display  = '';
+    authBadge.style.display  = 'none';
+  }
+}
+updateAuthUI();
+
+// ── Open / close modal ──
+btnSignIn.addEventListener('click', () => {
+  authError.classList.remove('visible');
+  document.getElementById('authName').value = '';
+  document.getElementById('authPasscode').value = '';
+  authModal.classList.add('open');
+  document.getElementById('authName').focus();
+});
+
+function closeModal() { authModal.classList.remove('open'); }
+authCancel.addEventListener('click', closeModal);
+authModal.addEventListener('click', (e) => { if (e.target === authModal) closeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+// ── Sign-out on badge click ──
+authBadge.addEventListener('click', () => {
+  if (!confirm(`Sign out as "${authName}"?`)) return;
+  authToken = null;
+  authName  = null;
+  localStorage.removeItem('knights-path-token');
+  localStorage.removeItem('knights-path-name');
+  updateAuthUI();
+});
+
+// ── Submit login / register ──
+authSubmit.addEventListener('click', handleAuthSubmit);
+document.getElementById('authPasscode').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleAuthSubmit();
+});
+
+async function handleAuthSubmit() {
+  const name     = document.getElementById('authName').value.trim();
+  const passcode = document.getElementById('authPasscode').value;
+
+  authError.classList.remove('visible');
+  if (!name || name.length < 2)       { showAuthError('Name must be at least 2 characters.'); return; }
+  if (!passcode || passcode.length < 4){ showAuthError('Passcode must be at least 4 characters.'); return; }
+
+  authSubmit.disabled  = true;
+  authSpinner.style.display = 'inline-block';
+  authSubmitLabel.textContent = 'Signing in…';
+
+  try {
+    await login(name, passcode);
+    closeModal();
+  } catch(err) {
+    showAuthError(err.message || 'Login failed. Try again.');
+  } finally {
+    authSubmit.disabled = false;
+    authSpinner.style.display = 'none';
+    authSubmitLabel.textContent = 'Sign in / Register';
+  }
+}
+
+function showAuthError(msg) {
+  authError.textContent = msg;
+  authError.classList.add('visible');
+}
+
+// ── Core sync functions ──
+async function login(name, passcode) {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, passcode })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Login failed');
+  authToken = data.token;
+  authName  = data.name;
+  localStorage.setItem('knights-path-token', authToken);
+  localStorage.setItem('knights-path-name',  authName);
+  updateAuthUI();
+  await loadFromServer();   // pull server state immediately after login
+}
+
+async function syncToServer() {
+  if (!authToken) return;
+  setSyncState('syncing');
+  const plain = {};
+  sections.forEach(s => { plain[s.id] = [...state[s.id]]; });
+  try {
+    const res = await fetch(`${API_BASE}/api/progress`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify(plain)
+    });
+    if (res.status === 401) { handleExpiredToken(); return; }
+    setSyncState('ok');
+  } catch(e) {
+    setSyncState('error');  // offline — localStorage already saved it
+  }
+}
+
+async function loadFromServer() {
+  if (!authToken) return;
+  setSyncState('syncing');
+  try {
+    const res = await fetch(`${API_BASE}/api/progress`, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if (res.status === 401) { handleExpiredToken(); return; }
+    if (!res.ok) { setSyncState('error'); return; }
+    const parsed = await res.json();
+    sections.forEach(s => {
+      state[s.id].clear();
+      if (Array.isArray(parsed[s.id])) {
+        parsed[s.id].forEach(idx => state[s.id].add(String(idx)));
+      }
+    });
+    saveState();          // mirror to localStorage as offline cache
+    applyStateToDOM();
+    updateProgress();
+    setSyncState('ok');
+  } catch(e) {
+    setSyncState('error'); // offline — fall back to localStorage
+  }
+}
+
+function handleExpiredToken() {
+  // Token expired — clear creds silently so the next action prompts re-login
+  authToken = null;
+  authName  = null;
+  localStorage.removeItem('knights-path-token');
+  localStorage.removeItem('knights-path-name');
+  updateAuthUI();
+  setSyncState('error');
+}
+
+// Pull from server on page load (no-op if not signed in)
+loadFromServer();
+</script>
+
+<!--
+=============================================================================
+  BACKEND SYNC — implemented in server.js (Node/Express + SQLite)
+  See server.js, package.json, and .env.example for the full stack.
+  localStorage stays as the offline-first fallback.
+=============================================================================
+
+-->
+</body>
+</html>
