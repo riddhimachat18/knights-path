@@ -1096,7 +1096,11 @@ window.addEventListener('scroll', () => {
    resolves to the same origin. Override with a full URL if
    you host the frontend separately (e.g. GitHub Pages).
    ========================================================= */
-const API_BASE = window.KNIGHTS_API_BASE || '';
+// API_BASE: set window.KNIGHTS_API_BASE before this script to point at your
+// Express server (e.g. 'https://your-server.com'). When empty we're running
+// as a pure static site — sync is disabled and the Sign-in button is hidden.
+const API_BASE = (window.KNIGHTS_API_BASE || '').replace(/\/$/, '');
+const HAS_BACKEND = API_BASE.length > 0;
 
 let authToken = localStorage.getItem('knights-path-token') || null;
 let authName  = localStorage.getItem('knights-path-name')  || null;
@@ -1118,6 +1122,12 @@ function setSyncState(state) {
 }
 
 function updateAuthUI() {
+  if (!HAS_BACKEND) {
+    // Static deployment — sync not available, hide both auth controls
+    btnSignIn.style.display = 'none';
+    authBadge.style.display = 'none';
+    return;
+  }
   if (authToken && authName) {
     btnSignIn.style.display  = 'none';
     authBadge.style.display  = 'inline-flex';
@@ -1131,6 +1141,7 @@ updateAuthUI();
 
 // ── Open / close modal ──
 btnSignIn.addEventListener('click', () => {
+  if (!HAS_BACKEND) return; // guard: should never fire when hidden, but just in case
   authError.classList.remove('visible');
   document.getElementById('authName').value = '';
   document.getElementById('authPasscode').value = '';
@@ -1206,7 +1217,7 @@ async function login(name, passcode) {
 }
 
 async function syncToServer() {
-  if (!authToken) return;
+  if (!HAS_BACKEND || !authToken) return;
   setSyncState('syncing');
   const plain = {};
   sections.forEach(s => { plain[s.id] = [...state[s.id]]; });
@@ -1227,7 +1238,7 @@ async function syncToServer() {
 }
 
 async function loadFromServer() {
-  if (!authToken) return;
+  if (!HAS_BACKEND || !authToken) return;
   setSyncState('syncing');
   try {
     const res = await fetch(`${API_BASE}/api/progress`, {
